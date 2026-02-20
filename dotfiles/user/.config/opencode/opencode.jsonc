@@ -1,0 +1,518 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["oh-my-opencode"],
+  "model": "proxy/kimi-k2.5",
+  "provider": {
+    "proxy": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Proxy",
+      "options": {
+        "baseURL": "https://proxy/v1",
+      },
+      "models": {
+        "qwen3-max": {
+          "id": "qwen3-max",
+          "name": "Qwen3 Max",
+          "family": "Qwen",
+          "release_date": "2025-12-15",
+          "attachment": false,
+          "reasoning": false,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 1.2,
+            "output": 6,
+          },
+          "limit": {
+            "context": 262144,
+            "output": 32768,
+          },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"],
+          },
+        },
+        "qwen3-vl-plus": {
+          "id": "qwen3-vl-plus",
+          "name": "Qwen3 VL Plus",
+          "family": "Qwen",
+          "release_date": "2025-09-23",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.4,
+            "output": 1.2,
+          },
+          "limit": {
+            "context": 262144,
+            "output": 32768,
+          },
+          "modalities": {
+            "input": ["text", "image", "audio", "video"],
+            "output": ["text"],
+          },
+        },
+        "glm-5": {
+          "id": "glm-5",
+          "name": "GLM-5",
+          "family": "GLM",
+          "release_date": "2026-02-11",
+          "attachment": false,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.8,
+            "output": 2.56,
+          },
+          "limit": {
+            "context": 200000,
+            "output": 128000,
+          },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"],
+          },
+        },
+        "gemini-2.5-computer-use-preview-10-2025": {
+          "id": "gemini-2.5-computer-use-preview-10-2025",
+          "name": "Gemini 2.5 Computer Use Preview",
+          "family": "Gemini",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 1.25,
+            "output": 3.75,
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 65535,
+          },
+          "modalities": {
+            "input": ["text", "image", "audio", "video"],
+            "output": ["text"],
+          },
+        },
+        "qwen3-max-preview": {
+          "id": "qwen3-max-preview",
+          "name": "Qwen3 Max Preview",
+          "cost": {
+            "input": 0.86,
+            "output": 3.44,
+          },
+          "limit": {
+            "context": 262144,
+            "output": 32768,
+          },
+        },
+        "claude-sonnet-4-6": {
+          "id": "claude-sonnet-4-6",
+          "name": "Claude Sonnet 4.6",
+          "family": "Claude",
+          "release_date": "2026-02-15",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 0.3,
+            "cache_write": 3.75,
+          },
+          "limit": {
+            "context": 200000,
+            "output": 64000,
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"],
+          },
+        },
+        "claude-opus-4-6-thinking": {
+          "id": "claude-opus-4-6-thinking",
+          "name": "Claude Opus 4.6 Thinking",
+          "family": "Claude",
+          "release_date": "2026-02-05",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "interleaved": {
+            "field": "reasoning_content",
+          },
+          "cost": {
+            "input": 15,
+            "output": 75,
+            "cache_read": 1.5,
+            "cache_write": 18.75,
+          },
+          "limit": {
+            "context": 200000,
+            "output": 64000,
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"],
+          },
+        },
+        "minimax-m2.5": {
+          "id": "minimax-m2.5",
+          "name": "MiniMax M2.5",
+          "family": "MiniMax",
+          "attachment": false,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "interleaved": {
+            "field": "reasoning_details",
+          },
+          "cost": {
+            "input": 0.3,
+            "output": 1.2,
+          },
+          "limit": {
+            "context": 204000,
+            "output": 131000,
+          },
+        },
+        "gpt-oss-120b-medium": {
+          "id": "gpt-oss-120b-medium",
+          "name": "GPT-OSS 120B Medium",
+          "family": "OpenAI",
+          "attachment": false,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.5,
+            "output": 1.5,
+          },
+          "limit": {
+            "context": 131072,
+            "output": 65536,
+          },
+        },
+        "gemini-3-pro-image-preview": {
+          "id": "gemini-3-pro-image-preview",
+          "name": "Gemini 3 Pro Image Preview",
+          "family": "Gemini",
+          "release_date": "2025-11-18",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "status": "beta",
+          "cost": {
+            "input": 0,
+            "output": 0,
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 65535,
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text", "image"],
+          },
+        },
+        "gemini-3-flash-preview": {
+          "id": "gemini-3-flash-preview",
+          "name": "Gemini 3 Flash Preview",
+          "family": "Gemini",
+          "release_date": "2025-11-18",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "status": "beta",
+          "cost": {
+            "input": 0,
+            "output": 0,
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 65535,
+          },
+          "modalities": {
+            "input": ["text", "image", "audio", "video"],
+            "output": ["text"],
+          },
+        },
+        "deepseek-v3.2-chat": {
+          "id": "deepseek-v3.2-chat",
+          "name": "DeepSeek V3.2 Chat",
+          "family": "DeepSeek",
+          "attachment": false,
+          "reasoning": false,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.14,
+            "output": 0.55,
+          },
+          "limit": {
+            "context": 131072,
+            "output": 8192,
+          },
+        },
+        "deepseek-v3.2": {
+          "id": "deepseek-v3.2",
+          "name": "DeepSeek V3.2 Experimental",
+          "family": "DeepSeek",
+          "attachment": false,
+          "reasoning": false,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.14,
+            "output": 0.55,
+          },
+          "limit": {
+            "context": 131072,
+            "output": 8192,
+          },
+        },
+        "qwen3-coder-plus": {
+          "id": "qwen3-coder-plus",
+          "name": "Qwen3 Coder Plus",
+          "family": "Qwen",
+          "attachment": false,
+          "reasoning": false,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 1,
+            "output": 5,
+          },
+          "limit": {
+            "context": 131072,
+            "output": 65536,
+          },
+        },
+        "coder-model": {
+          "id": "coder-model",
+          "name": "Qwen 3.5 Coder Plus",
+          "family": "Qwen",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 1,
+            "output": 5,
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 65536,
+          },
+        },
+        "kimi-k2.5": {
+          "id": "kimi-k2.5",
+          "name": "Kimi K2.5",
+          "family": "Kimi",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "interleaved": {
+            "field": "reasoning_content",
+          },
+          "cost": {
+            "input": 0.6,
+            "output": 2.5,
+          },
+          "limit": {
+            "context": 256000,
+            "output": 16384,
+          },
+          "modalities": {
+            "input": ["text", "image", "audio", "video"],
+            "output": ["text"],
+          },
+        },
+        "deepseek-v3.2-reasoner": {
+          "id": "deepseek-v3.2-reasoner",
+          "name": "DeepSeek V3.2 Reasoner",
+          "family": "DeepSeek",
+          "attachment": false,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "interleaved": {
+            "field": "reasoning_content",
+          },
+          "cost": {
+            "input": 0.55,
+            "output": 2.19,
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768,
+          },
+        },
+        "gemini-2.5-flash-lite": {
+          "id": "gemini-2.5-flash-lite",
+          "name": "Gemini 2.5 Flash Lite",
+          "family": "Gemini",
+          "attachment": true,
+          "reasoning": false,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.075,
+            "output": 0.3,
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 65535,
+          },
+          "modalities": {
+            "input": ["text", "image", "audio", "video"],
+            "output": ["text"],
+          },
+        },
+        "gemini-3-pro-preview": {
+          "id": "gemini-3-pro-preview",
+          "name": "Gemini 3 Pro Preview",
+          "family": "Gemini",
+          "release_date": "2025-11-18",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "status": "beta",
+          "cost": {
+            "input": 0,
+            "output": 0,
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 65535,
+          },
+          "modalities": {
+            "input": ["text", "image", "audio", "video", "pdf"],
+            "output": ["text"],
+          },
+        },
+        "tstars2.0": {
+          "id": "tstars2.0",
+          "name": "TStars 2.0",
+          "family": "TStars",
+          "release_date": "2025-01-01",
+          "attachment": false,
+          "reasoning": false,
+          "temperature": true,
+          "tool_call": true,
+          "cost": {
+            "input": 0.5,
+            "output": 1.5,
+          },
+          "limit": {
+            "context": 65536,
+            "output": 8192,
+          },
+        },
+      },
+    },
+    "nvapi": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "nvapi",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1",
+      },
+      "models": {
+        "Kimi K2.5": {
+          "name": "moonshotai/kimi-k2.5",
+        },
+        "GLM 4.7": {
+          "name": "z-ai/glm4.7",
+        },
+        "DeepSeek v3.2": {
+          "name": "deepseek-ai/deepseek-v3_2",
+        },
+      },
+    },
+  },
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "",
+      },
+      "enabled": true,
+    },
+    "deepwiki": {
+      "type": "remote",
+      "url": "https://mcp.deepwiki.com/mcp",
+      "enabled": true,
+    },
+    "gh_grep": {
+      "type": "remote",
+      "url": "https://mcp.grep.app",
+      "enabled": false,
+    },
+    "tavily": {
+      "type": "remote",
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=",
+      "enabled": false,
+    },
+    "exa": {
+      "type": "remote",
+      "url": "https://mcp.exa.ai/mcp?exaApiKey=",
+      "enabled": true,
+    },
+    "n8n-mcp": {
+      "type": "local",
+      "command": ["npx", "-y", "n8n-mcp"],
+      "environment": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://n8n",
+        "N8N_API_KEY": "",
+        "N8N_MCP_TELEMETRY_DISABLED": "true",
+      },
+      "enabled": false,
+    },
+    "n8n-mcp-off": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "supergateway",
+        "--streamableHttp",
+        "https://n8n",
+        "--header",
+        "authorization:Bearer ",
+      ],
+      "enabled": false,
+    },
+    "git": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--mount",
+        "type=bind,src=./,dst=/workspace",
+        "mcp/git",
+      ],
+      "enabled": false,
+    },
+  },
+  "agent": {
+    "explore": {
+      "disable": false,
+    },
+    "general": {
+      "disable": true,
+    },
+  },
+}

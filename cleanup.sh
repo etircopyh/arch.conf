@@ -1,96 +1,120 @@
 #!/bin/bash
 
-# A script to surgically clean up caches and temporary files on Arch Linux.
-# Targeted at freeing space without losing critical user data (bookmarks, passwords, etc.).
+# Comprehensive Arch Linux Cleanup Script
+# Targets heavy-hitting caches (GBs) while preserving user data.
 
-echo "--- Starting System Cleanup ---"
+echo "--- Starting Aggressive Space Cleanup ---"
 
-# 1. Clean pacman cache
+# 1. System Package Manager (Pacman)
 if command -v paccache &>/dev/null; then
-  echo "[1/7] Cleaning pacman cache (keeping 2 versions)..."
+  echo "[1/9] Cleaning pacman cache (keeping last 2 versions)..."
   sudo paccache -rk2
   sudo paccache -ruk0
 else
-  echo "[1/7] paccache not found, using pacman -Sc..."
+  echo "[1/9] paccache not found, using pacman -Sc..."
   sudo pacman -Sc --noconfirm
 fi
 
-# 2. Remove orphaned packages
+# 2. Orphaned Packages
 orphans=$(pacman -Qtdq)
-if [ -z "$orphans" ]; then
-  echo "[2/7] No orphaned packages found."
-else
-  echo "[2/7] Removing orphaned packages..."
+if [ -n "$orphans" ]; then
+  echo "[2/9] Removing orphaned packages..."
   sudo pacman -Rns $orphans --noconfirm
+else
+  echo "[2/9] No orphaned packages to remove."
 fi
 
-# 3. Vacuum systemd journal logs
-echo "[3/7] Vacuuming systemd journal (2 weeks / 100MB)..."
+# 3. Systemd Journal
+echo "[3/9] Vacuuming journal logs (keeping 2 weeks or 100MB)..."
 sudo journalctl --vacuum-time=2w
 sudo journalctl --vacuum-size=100M
 
-# 4. Surgical Browser Profile Cleanup
-echo "[4/7] Analyzing browser profiles for hidden caches..."
-
-# Firefox profile paths
-FF_PATHS=(~/.mozilla/firefox/*.default*)
-for ff_profile in "${FF_PATHS[@]}"; do
-  if [ -d "$ff_profile" ]; then
-    if pgrep -x "firefox" >/dev/null; then
-      echo "  [!] Firefox is running. Skipping profile: $(basename "$ff_profile")"
-    else
-      echo "  Cleaning Firefox profile: $(basename "$ff_profile")"
-      rm -rf "$ff_profile/cache2"/* 2>/dev/null || true
-      rm -rf "$ff_profile/startupCache"/* 2>/dev/null || true
-      rm -rf "$ff_profile/storage/default"/* 2>/dev/null || true
-      rm -rf "$ff_profile/entries"/* 2>/dev/null || true
-    fi
+# 4. Browser Profile Caches (Surgical)
+echo "[4/9] Cleaning browser profile-internal caches..."
+# Firefox
+for ff_profile in ~/.mozilla/firefox/*.default*; do
+  [ -d "$ff_profile" ] || continue
+  if pgrep -x "firefox" >/dev/null; then
+    echo "  [!] Firefox is running, skipping profile: $(basename "$ff_profile")"
+  else
+    echo "  Cleaning Firefox: $(basename "$ff_profile")"
+    rm -rf "$ff_profile/cache2"/* "$ff_profile/startupCache"/* "$ff_profile/storage/default"/* 2>/dev/null
   fi
 done
 
-# Chromium-based (Chrome, Brave, Chromium)
-CHROME_CONFIGS=(
-  "$HOME/.config/chromium"
-  "$HOME/.config/google-chrome"
-  "$HOME/.config/BraveSoftware/Brave-Browser"
-)
-
-for config_dir in "${CHROME_CONFIGS[@]}"; do
-  if [ -d "$config_dir" ]; then
-    browser_name=$(basename "$config_dir")
-    if pgrep -fi "$browser_name" >/dev/null; then
-      echo "  [!] $browser_name is running. Skipping."
-    else
-      echo "  Cleaning $browser_name profile caches..."
-      find "$config_dir" -type d \( -name "Cache" -o -name "Code Cache" -o -name "GPUCache" -o -name "CacheStorage" -o -name "ScriptCache" \) -exec rm -rf {}/* + 2>/dev/null || true
-    fi
+# Chromium-based
+CHROME_DIRS=(~/.config/chromium ~/.config/google-chrome ~/.config/BraveSoftware/Brave-Browser)
+for dir in "${CHROME_DIRS[@]}"; do
+  [ -d "$dir" ] || continue
+  browser=$(basename "$dir")
+  if pgrep -fi "$browser" >/dev/null; then
+    echo "  [!] $browser is running, skipping."
+  else
+    echo "  Cleaning $browser caches..."
+    find "$dir" -type d \( -name "Cache" -o -name "Code Cache" -o -name "GPUCache" -o -name "CacheStorage" \) -exec rm -rf {}/* + 2>/dev/null
   fi
 done
 
-# 5. General ~/.cache cleanup
-echo "[5/7] Cleaning ~/.cache (excluding running browsers)..."
-# We exclude the root directories of running browsers to prevent simple file-lock issues
+# 5. Electron App Junk
+echo "[5/9] Hunting for Electron & generic app junk in ~/.config..."
+# Targets Discord, Slack, Spotify, etc.
+find ~/.config -maxdepth 3 -type d \( \
+  -name "GPUCache" -o \
+  -name "Code Cache" -o \
+  -name "Cache" -o \
+  -name "CacheStorage" -o \
+  -name "blob_storage" \
+  \) -not -path "*/node_modules/*" -exec rm -rf {}/* + 2>/dev/null
+
+# 6. Development Tools (The real space hogs)
+echo "[6/9] Cleaning development caches (npm, pip, cargo)..."
+[ -d ~/.npm ] && echo "  Cleaning npm cache..." && npm cache clean --force 2>/dev/null
+if command -v pip &>/dev/null; then
+  echo "  Cleaning pip cache..."
+  pip cache purge 2>/dev/null
+fi
+if [ -d ~/.cargo/registry ]; then
+  echo "  Cleaning cargo registry (sources only, keeping binaries)..."
+  rm -rf ~/.cargo/registry/src/* ~/.cargo/registry/cache/* 2>/dev/null
+fi
+
+# 7. Media & Game Caches
+echo "[7/9] Cleaning media and game caches..."
+# Steam Shader Cache - can grow to tens of gigabytes
+STEAM_SHADER_CACHE=~/.local/share/Steam/shadercache
+if [ -d "$STEAM_SHADER_CACHE" ]; then
+  if pgrep -x "steam" >/dev/null; then
+    echo "  [!] Steam is running, skipping shader cache."
+  else
+    echo "  Cleaning Steam shader cache..."
+    rm -rf "$STEAM_SHADER_CACHE"/* 2>/dev/null
+  fi
+fi
+
+# Spotify Cache
+if [ -d ~/.cache/spotify ]; then
+  echo "  Cleaning Spotify cache..."
+  rm -rf ~/.cache/spotify/* 2>/dev/null
+fi
+
+# 8. General ~/.cache & Trash
+echo "[8/9] Cleaning ~/.cache and Trash..."
+# Exclude folders of running browsers to prevent lock issues
 EXCLUDES=""
-if pgrep -x "firefox" >/dev/null; then EXCLUDES="$EXCLUDES -not -path '*/mozilla/*'"; fi
-if pgrep -fi "chromium" >/dev/null; then EXCLUDES="$EXCLUDES -not -path '*/chromium/*'"; fi
-if pgrep -fi "brave" >/dev/null; then EXCLUDES="$EXCLUDES -not -path '*/BraveSoftware/*'"; fi
+pgrep -x "firefox" >/dev/null && EXCLUDES="$EXCLUDES -not -path '*/mozilla/*'"
+pgrep -fi "chromium" >/dev/null && EXCLUDES="$EXCLUDES -not -path '*/chromium/*'"
+pgrep -fi "brave" >/dev/null && EXCLUDES="$EXCLUDES -not -path '*/BraveSoftware/*'"
 
 eval "find ~/.cache -mindepth 1 $EXCLUDES -delete 2>/dev/null || true"
-
-# 6. Thumbnails and Trash
-echo "[6/7] Emptying thumbnails and trash..."
-rm -rf ~/.cache/thumbnails/* 2>/dev/null || true
 rm -rf ~/.local/share/Trash/* 2>/dev/null || true
 
-# 7. AUR Helpers
+# 9. AUR Helpers
 if command -v yay &>/dev/null; then
-  echo "[7/7] Cleaning yay cache..."
+  echo "[9/9] Cleaning yay cache..."
   yay -Sc --noconfirm
 elif command -v paru &>/dev/null; then
-  echo "[7/7] Cleaning paru cache..."
+  echo "[9/9] Cleaning paru cache..."
   paru -Sc --noconfirm
-else
-  echo "[7/7] No AUR helper (yay/paru) found."
 fi
 
 echo "--- Cleanup Complete! ---"
