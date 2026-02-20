@@ -1,8 +1,0 @@
-#!/bin/sh
-#
-# Restart PulseAudio service
-#
-# Fix occasional sound absence
-
-systemctl --user restart pulseaudio.service
-

@@ -2,29 +2,6 @@
 # Global Environment Variables
 #
 
-# QT Wayland Disable CSD
-QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+LD_BIND_NOW=1
 
-# QT DPI
-#QT_WAYLAND_FORCE_DPI=102
-
-# Wayland Support Variables
-#GDK_BACKEND=wayland
-#ELM_ACCEL=gl
-#ELM_DISPLAY=wl
-#QT_QPA_PLATFORM=wayland
-#CLUTTER_BACKEND=wayland
-#SDL_VIDEODRIVER=wayland
-#ECORE_EVAS_ENGINE=wayland_egl
-#ELM_ENGINE=wayland_egl
-#_JAVA_AWT_WM_NONREPARENTING=1
-
-#XDG_SESSION_TYPE=wayland
-
-QT_QPA_PLATFORMTHEME=qt5ct
-
-QT_LOGGING_RULES=*=false
-
-XCURSOR_THEME=Breeze_Contrast
-
-LIBVA_DRIVER_NAME=i965
+GLIBC_TUNABLES=glibc.malloc.hugetlb=1:glibc.elision.enable=1

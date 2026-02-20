@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+mount --mkdir -t lowntfs-3g -o uid=$UID,gid=$GID,rw,user,exec,umask=000,noacsrules "$1" "$2"

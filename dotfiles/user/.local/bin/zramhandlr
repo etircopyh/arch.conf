@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+
+# Bash Strict Mode
+set -o errexit # add '|| true' for commands that you allow to fail
+set -o nounset
+set -o pipefail
+
+# Colored output using printf for better portability
+readonly RED=$'\033[0;31m'
+readonly GREEN=$'\033[0;32m'
+readonly YELLOW=$'\033[0;33m'
+readonly BLUE=$'\033[0;94m'
+readonly NC=$'\033[0m'
+
+readonly NAME="${0##*/}"  # More reliable way to get script name
+readonly VERSION="1.3"
+
+# System info using read for better performance
+read -r NCPU < <(nproc)
+read -r MEMTOTAL < <(awk '/MemTotal/ {print $2}' /proc/meminfo)
+
+# Config file sourcing
+readonly CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/zramhandlr/zram.conf"
+[[ -f "$CONFIG_PATH" ]] && source "$CONFIG_PATH"
+
+# Configuration defaults (don't edit, resort to zram.conf file)
+declare -r ZRAM_COMPRESSION_ALG=${ZRAM_COMPRESSION_ALG:-zstd}
+declare -r ZRAM_SIZE_PERCENT=${ZRAM_SIZE_PERCENT:-50}
+declare -r ZRAM_MAX_COMP_STREAMS=${ZRAM_MAX_COMP_STREAMS:-$NCPU}
+declare -r ZRAM_DEVICE_PRIORITY=${ZRAM_DEVICE_PRIORITY:-100}
+
+# Memory calculation
+(( RAM_AMOUNT = MEMTOTAL / 1024 ))
+(( ZRAMSIZE = RAM_AMOUNT * ZRAM_SIZE_PERCENT / 100 ))
+
+# Message functions for better formatting
+msg() {
+    local type=$1
+    local message=$2
+    printf "%b%s%b\\n" "${!type}" "${message}" "${NC}" >&2
+}
+
+error() { msg "RED" "Error: $1"; exit 1; }
+info() { msg "BLUE" "$1"; }
+success() { msg "GREEN" "$1"; }
+warning() { msg "YELLOW" "$1"; }
+
+# Function to check and escalate privileges if needed
+need_root() {
+    if [[ -n "${SUDO_COMMAND:-}" ]]; then
+        [[ "${SUDO_COMMAND%% *}" != "$0" ]] && error "Infinite sudo loop detected"
+        return 0  # Already running with sudo
+    fi
+
+    if (( EUID != 0 )); then
+        warning "This operation requires root privileges"
+        
+        # Try different privilege escalation methods
+        if [[ -t 1 ]]; then
+            # Interactive terminal - try sudo
+            exec sudo "$0" "$@"
+        elif [[ -n "${SUDO_ASKPASS:-}" ]] && [[ -x $(command -v "$SUDO_ASKPASS") ]]; then
+            # Non-interactive with SUDO_ASKPASS available
+            exec sudo --askpass "$0" "$@"
+        elif command -v pkexec &>/dev/null; then
+            # Try pkexec if available
+            exec pkexec "$0" "$@"
+        else
+            error "Could not escalate privileges. Please run with sudo"
+        fi
+        # If exec failed, exit with error
+        error "Failed to escalate privileges"
+    fi
+}
+
+show_status() {
+    # Read-only operations don't need root
+    if grep -q 'zram' /proc/swaps; then
+        success "ZRAM Status:"
+        printf "  %-24s %s\\n" "Compression algorithm:" "$(< /sys/block/zram0/comp_algorithm)"
+        printf "  %-24s %dM\\n" "Current size:" "$(( $(< /sys/block/zram0/disksize) / 1024 / 1024 ))"
+        printf "  %-24s %s\\n" "Max compression streams:" "$(< /sys/block/zram0/max_comp_streams)"
+        printf "  %-24s %sM\\n" "Memory used:" "$(( $(awk '/zram0/ {print $4}' /proc/swaps) / 1024 ))"
+        printf "  %-24s %d\\n" "Priority:" "$ZRAM_DEVICE_PRIORITY"
+    else
+        warning "ZRAM is not currently active"
+    fi
+}
+
+show_help() {
+    printf "%s v%s\\n\\n" "${NAME^}" "$VERSION"
+    cat << EOF
+Usage: ${NAME@Q} <command> [options]
+
+Commands:
+    enable    Enable ZRAM swap space (requires root)
+    disable   Disable ZRAM swap space (requires root)
+    clear     Clear ZRAM swap space (requires root)
+    status    Show current ZRAM status
+    
+Options:
+    -h, --help     Show this help message
+    -v, --version  Show version information
+
+${NAME^} is a CLI system tool written in BASH that manages ZRAM swap space.
+Configuration file: ${CONFIG_PATH@Q}
+EOF
+}
+
+# Main execution
+case "${1:-}" in
+    --help|-h)
+        show_help
+        ;;
+    --version|-v)
+        printf "%s version %s\\n" "${NAME@Q}" "$VERSION"
+        ;;
+    status)
+        show_status
+        ;;
+    enable)
+        need_root "$@"
+        if ! grep -q 'zram' /proc/swaps; then
+            modprobe zram 2>/dev/null || error "Failed to load ZRAM kernel module"
+
+            [[ -w /sys/block/zram0/comp_algorithm ]] || error "Cannot set compression algorithm"
+            echo "$ZRAM_COMPRESSION_ALG" > /sys/block/zram0/comp_algorithm
+
+            echo "$ZRAM_MAX_COMP_STREAMS" > /sys/block/zram0/max_comp_streams || \
+                error "Failed to set max compression streams"
+
+            printf "RAM amount: %dM\\n" "$RAM_AMOUNT"
+            [[ -w /sys/block/zram0/disksize ]] || error "Cannot set ZRAM size"
+            echo "${ZRAMSIZE}M" > /sys/block/zram0/disksize
+
+            (( $(< /sys/block/zram0/disksize) != 0 )) || error "Failed to set ZRAM device size"
+            printf "ZRAM size: %dM\\n" "$ZRAMSIZE"
+
+            mkswap --label zram0 /dev/zram0 || error "Failed to create swap on ZRAM device"
+            swapon --priority "$ZRAM_DEVICE_PRIORITY" /dev/zram0 || error "Failed to enable ZRAM swap"
+            success "ZRAM successfully enabled"
+        else
+            warning "ZRAM is already set up"
+            exit 1
+        fi
+        ;;
+    disable)
+        need_root "$@"
+        if grep -q 'zram' /proc/swaps; then
+            info "Offloading ZRAM device"
+            swapoff /dev/zram0 || error "Failed to disable ZRAM swap"
+            rmmod zram || error "Failed to unload ZRAM module"
+            success "ZRAM device successfully suspended"
+        else
+            warning "No active ZRAM devices found"
+            exit 1
+        fi
+        ;;
+    clear)
+        need_root "$@"
+        grep -q 'zram' /proc/swaps || error "ZRAM is not currently active"
+        info "Clearing ZRAM..."
+        swapoff --all || error "Failed to disable swap devices"
+        swapon --priority "$ZRAM_DEVICE_PRIORITY" /dev/zram0 || error "Failed to re-enable ZRAM"
+        success "Successfully cleared ZRAM space"
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac

@@ -2,13 +2,12 @@
 #
 set $bg #282A36
 set $fg #eff1f5
-set $br #0E0E25
+set $br #88562D
 set $ia #232425
 
 # class                 border  background  text    indicator   child_border
 client.focused          $br     $br         $fg     $bg         $br
 client.focused_inactive $bg     $bg         $fg     $bg         $bg
 client.unfocused        $bg     $bg         $fg     $bg         $bg
-client.urgent          $br     $br         $fg     $bg         $br
-client.placeholder     $br     $br         $fg     $bg         $br
-client.background              $bg
+client.urgent           $br     $br         $fg     $bg         $br
+client.placeholder      $br     $br         $fg     $bg         $br

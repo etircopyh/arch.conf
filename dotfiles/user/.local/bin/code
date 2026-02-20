@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export VSCODE_PORTABLE="${XDG_DATA_HOME:-$HOME/.local/share}/VSCode"
+if [ -n "${WAYLAND_DISPLAY}" ]; then
+    command -p code --extensions-dir "$VSCODE_PORTABLE/Extensions" --ozone-platform=wayland --enable-features=UseOzonePlatform "$@"
+else
+    command -p code --extensions-dir "$VSCODE_PORTABLE/Extensions" --ozone-platform=x11 --enable-features=UseOzonePlatform "$@"
+fi

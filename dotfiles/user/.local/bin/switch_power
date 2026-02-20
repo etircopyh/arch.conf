@@ -1,0 +1,782 @@
+#!/bin/bash
+
+# Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+IFS=$'\n\t'  # More secure IFS setting
+
+# Debug mode
+DEBUG=${DEBUG:-0}
+
+# Colored output using printf for better portability
+readonly RED=$'\033[0;31m'
+readonly GREEN=$'\033[0;32m'
+readonly YELLOW=$'\033[0;33m'
+readonly BLUE=$'\033[0;94m'
+readonly NC=$'\033[0m'
+
+readonly VERSION="1.0"
+readonly NAME="${0##*/}"  # More reliable way to get script name
+
+# Power control constants
+declare -rA POWER_CONTROL=(
+    [PERF]="on"
+    [BATTERY]="auto"
+    [MAX_SAVE]="auto"
+)
+
+# Define power modes as pseudo-enum
+declare -rA POWER_MODES=(
+    [PERF]="Performance mode"
+    [BATTERY]="Battery saving mode"
+    [MAX_SAVE]="Maximum power saving mode"
+)
+
+# Required commands
+declare -ra REQUIRED_COMMANDS=(
+    "cpupower"
+    "ethtool"
+    "find"
+    "grep"
+    "lspci"
+    "modprobe"
+    "realpath"
+    "rfkill"
+    "systemctl"
+    "tee"
+)
+
+# Configuration file
+readonly CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/${NAME}/config"
+readonly CONFIG_DIR="${CONFIG_PATH%/*}"
+
+# Default configuration (override in config file)
+declare -A CONFIG=(
+    [REFRESH_RATE_BATTERY]="60"
+    [REFRESH_RATE_PERF]="165"
+    [USB_AUTOSUSPEND_DELAY_BATTERY]="2"
+    [USB_AUTOSUSPEND_DELAY_PERF]="6"
+    [VM_SWAPPINESS_BATTERY]="20"
+    [VM_SWAPPINESS_PERF]="80"
+)
+
+# Error handling
+declare -A MSG_TYPE=(
+    [error]="${RED}Error"
+    [info]="${BLUE}Info"
+    [success]="${GREEN}Success"
+    [warning]="${YELLOW}Warning"
+)
+
+# Cleanup function
+cleanup() {
+    local exit_code=$?
+    debug "Cleanup called with exit code: $exit_code"
+    # Restore IFS
+    IFS=$' \t\n'
+    # Only exit with non-zero if it's a real error
+    if (( exit_code != 0 )) && [[ -z "${SUDO_COMMAND:-}" ]]; then
+        debug "Exiting with error code: $exit_code"
+        exit "$exit_code"
+    fi
+    debug "Cleanup completed successfully"
+    exit 0
+}
+
+# Set up trap
+trap cleanup EXIT
+trap 'error "Script interrupted"' INT TERM
+
+# Check dependencies
+check_dependencies() {
+    local missing_commands=()
+    for cmd in "${REQUIRED_COMMANDS[@]}"; do
+        command -v "$cmd" &>/dev/null || missing_commands+=("$cmd")
+    done
+    
+    if (( ${#missing_commands[@]} > 0 )); then
+        error "Missing required commands: ${missing_commands[*]}"
+    fi
+}
+
+# Validate configuration
+validate_config() {
+    local errors=()
+    
+    # Validate numeric values
+    for key in "${!CONFIG[@]}"; do
+        if [[ ${CONFIG[$key]} != +([0-9]) ]]; then
+            errors+=("$key must be a positive integer (got ${CONFIG[$key]})")
+        fi
+    done
+    
+    # Validate refresh rates
+    if (( CONFIG[REFRESH_RATE_BATTERY] > CONFIG[REFRESH_RATE_PERF] )); then
+        errors+=("Battery refresh rate cannot be higher than performance refresh rate")
+    fi
+    
+    # Validate swappiness
+    if (( CONFIG[VM_SWAPPINESS_BATTERY] > 100 )) || (( CONFIG[VM_SWAPPINESS_PERF] > 100 )); then
+        errors+=("Swappiness values must be between 0 and 100")
+    fi
+    
+    if (( ${#errors[@]} > 0 )); then
+        printf "Configuration errors:\\n"
+        printf "%s\\n" "${errors[@]}" >&2
+        exit 1
+    fi
+}
+
+# Create config directory if it doesn't exist
+ensure_config_dir() {
+    if [[ ! -d "$CONFIG_DIR" ]]; then
+        mkdir -p "$CONFIG_DIR"
+        cat > "$CONFIG_PATH" << EOL
+# ${NAME} configuration file
+
+# Refresh rates (Hz)
+REFRESH_RATE_BATTERY=${CONFIG[REFRESH_RATE_BATTERY]}
+REFRESH_RATE_PERF=${CONFIG[REFRESH_RATE_PERF]}
+
+# USB autosuspend delay (seconds)
+USB_AUTOSUSPEND_DELAY_BATTERY=${CONFIG[USB_AUTOSUSPEND_DELAY_BATTERY]}
+USB_AUTOSUSPEND_DELAY_PERF=${CONFIG[USB_AUTOSUSPEND_DELAY_PERF]}
+
+# VM swappiness (0-100)
+VM_SWAPPINESS_BATTERY=${CONFIG[VM_SWAPPINESS_BATTERY]}
+VM_SWAPPINESS_PERF=${CONFIG[VM_SWAPPINESS_PERF]}
+EOL
+    fi
+}
+
+# Debug function
+debug() {
+    [[ "$DEBUG" == "1" ]] || return 0
+    printf "[DEBUG] %s\\n" "$1" >&2
+}
+
+# Generic message function
+msg() {
+    local type=$1
+    local message=$2
+    debug "msg() called with type='$type', message='$message'"
+    # Remove any trailing period for consistency
+    message="${message%.}"
+    printf "%b: %b%b\\n" "${MSG_TYPE[$type]}" "${message@Q}" "${NC}" >&2
+}
+
+# Specific message functions using msg
+error() {
+    local message=$1
+    local code=${2:-1}  # Default to 1 if no code provided
+    msg "error" "$message"
+    exit "$code"
+}
+info() { msg "info" "$1"; }
+success() { msg "success" "$1"; }
+warning() { msg "warning" "$1"; }
+
+# Function to safely write to sysfs with optional message
+echot() {
+    local value=$1
+    local file=$2
+    local msg=${3:-}
+    
+    debug "echot() called with value='$value', file='$file', msg='$msg'"
+    [[ -e "$file" ]] || { debug "File '$file' does not exist"; return 0; }
+    [[ -w "$file" ]] || { debug "File '$file' not writable"; warning "Cannot write to ${file@Q} (permission denied)"; return 1; }
+    
+    debug "Writing '$value' to '$file'"
+    if printf '%s' "$value" | sudo tee "$file" &>/dev/null; then
+        [[ -n "$msg" ]] && { debug "Success: $msg"; info "$msg"; }
+        return 0
+    fi
+    debug "Failed to write to '$file'"
+    return 1
+}
+
+# Function to check if a device exists
+check_device() {
+    local device=$1
+    [[ -e "$device" ]] || { warning "Device $device not found"; return 1; }
+    return 0
+}
+
+# Function to check and escalate privileges if needed
+need_root() {
+    debug "Checking root privileges"
+    if [[ -n "${SUDO_COMMAND:-}" ]]; then
+        debug "Running under sudo, checking for infinite loop"
+        [[ "${SUDO_COMMAND%% *}" != "$0" ]] && { debug "Infinite sudo loop detected"; error "Infinite sudo loop detected"; }
+        debug "Running with sudo privileges"
+        return 0
+    fi
+
+    if (( EUID != 0 )); then
+        debug "Not running as root (EUID: $EUID)"
+        printf "%s\\n" "${YELLOW}This operation requires root privileges${NC}" >&2
+        if [[ -t 1 ]]; then
+            debug "Terminal detected, using sudo"
+            if [[ "${DEBUG:-0}" == "1" ]]; then
+                debug "Running with debug mode: DEBUG=1 sudo $0 $*"
+                DEBUG=1 sudo "$0" "$@"
+                exit $?  # Use the actual exit code from sudo
+            else
+                debug "Running without debug mode: sudo $0 $*"
+                sudo "$0" "$@"
+                exit $?  # Use the actual exit code from sudo
+            fi
+        elif [[ -n "${SUDO_ASKPASS:-}" ]] && [[ -x $(command -v "$SUDO_ASKPASS") ]]; then
+            debug "No terminal, using sudo askpass"
+            if [[ "${DEBUG:-0}" == "1" ]]; then
+                debug "Running with debug mode: DEBUG=1 sudo --askpass $0 $*"
+                DEBUG=1 sudo --askpass "$0" "$@"
+                exit $?  # Use the actual exit code from sudo askpass
+            else
+                debug "Running without debug mode: sudo --askpass $0 $*"
+                sudo --askpass "$0" "$@"
+                exit $?  # Use the actual exit code from sudo askpass
+            fi
+        elif command -v pkexec &>/dev/null; then
+            debug "Using pkexec"
+            if [[ "${DEBUG:-0}" == "1" ]]; then
+                debug "Running with debug mode: DEBUG=1 pkexec $0 $*"
+                DEBUG=1 pkexec "$0" "$@"
+                exit $?  # Use the actual exit code from pkexec
+            else
+                debug "Running without debug mode: pkexec $0 $*"
+                pkexec "$0" "$@"
+                exit $?  # Use the actual exit code from pkexec
+            fi
+        else
+            debug "No privilege escalation method available"
+            error "Could not escalate privileges. Please run with sudo"
+        fi
+    fi
+    debug "Already running as root"
+    return 0
+}
+
+# CPU detection using read for better performance
+get_cpu_vendor() {
+    local vendor
+    debug "Reading CPU vendor from /proc/cpuinfo"
+    read -r vendor < <(awk -F': ' '/vendor_id/{print $2; exit}' /proc/cpuinfo)
+    debug "Raw vendor string: '$vendor'"
+    
+    case "$vendor" in
+        AuthenticAMD) debug "Detected AMD CPU"; echo "amd" ;;
+        GenuineIntel) debug "Detected Intel CPU"; echo "intel" ;;
+        *) debug "Unknown CPU vendor: '$vendor'"; echo "unknown" ;;
+    esac
+}
+
+# Function to apply settings to multiple files
+apply_settings() {
+    local -n settings=$1
+    local msg=$2
+    local configured=false
+    
+    debug "apply_settings() called with msg='$msg'"
+    debug "Settings to apply: ${!settings[*]}"
+    
+    for file in "${!settings[@]}"; do
+        debug "Processing file '${file@Q}' with value '${settings[$file]@Q}'"
+        if echot "${settings[$file]}" "$file"; then
+            configured=true
+            debug "Successfully configured '${file@Q}'"
+        else
+            debug "Failed to configure '${file@Q}'"
+        fi
+    done
+    
+    [[ "$configured" == "true" ]] && { debug "Settings applied successfully"; info "$msg"; }
+    return 0
+}
+
+# Function to apply settings with glob pattern
+apply_glob_settings() {
+    local pattern=$1
+    local value=$2
+    local msg=$3
+    local configured=false
+    
+    debug "apply_glob_settings() called with pattern='${pattern@Q}', value='${value@Q}', msg='${msg@Q}'"
+    
+    while IFS= read -r -d $'\0' file; do
+        debug "Processing glob match: '${file@Q}'"
+        if echot "$value" "$file"; then
+            configured=true
+            debug "Successfully configured '${file@Q}'"
+        else
+            debug "Failed to configure '${file@Q}'"
+        fi
+    done < <(find "${pattern%/*}" -path "$pattern" -print0 2>/dev/null)
+    
+    [[ "$configured" == "true" ]] && { debug "Glob settings applied successfully"; info "$msg"; }
+    return 0
+}
+
+# CPU management functions
+configure_cpu() {
+    local mode=$1
+    local cpu_vendor
+    cpu_vendor=$(get_cpu_vendor)
+    
+    info "Configuring CPU settings"
+    
+    # Set AMD P-State status if AMD CPU
+    if [[ "$cpu_vendor" == "amd" ]]; then
+        echot "active" /sys/devices/system/cpu/amd_pstate/status "Setting AMD P-State to active"
+    fi
+    
+    # Define CPU settings based on mode
+    declare -A cpu_settings=(
+        [governor]="$([[ "$mode" == "PERF" ]] && echo "performance" || echo "powersave")"
+        [platform_profile]="$([[ "$mode" == "PERF" ]] && echo "performance" || echo "quiet")"
+        [energy_pref]="$([[ "$mode" == "PERF" ]] && echo "performance" || echo "power")"
+        [smt]="$([[ "$mode" == "PERF" ]] && echo "on" || echo "off")"
+    )
+
+    # Define CPU boost settings based on vendor
+    declare -A cpu_boost=()
+    case "$cpu_vendor" in
+        amd)
+            cpu_boost=(
+                [/sys/devices/system/cpu/amd_pstate/cpb_boost]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "0")"
+                [/sys/devices/system/cpu/cpufreq/boost]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "0")"
+            )
+            ;;
+        intel)
+            cpu_boost=(
+                [/sys/devices/system/cpu/intel_pstate/no_turbo]="$([[ "$mode" == "PERF" ]] && echo "0" || echo "1")"
+                [/sys/devices/system/cpu/cpufreq/boost]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "0")"
+            )
+            ;;
+    esac
+
+    # Apply CPU settings
+    cpupower frequency-set -g "${cpu_settings[governor]}" &>/dev/null || \
+        warning "Failed to set CPU governor to ${cpu_settings[governor]}"
+    
+    echot "${cpu_settings[platform_profile]}" \
+        /sys/firmware/acpi/platform_profile \
+        "Setting platform profile to ${cpu_settings[platform_profile]}"
+    
+    # Apply energy performance preference
+    apply_glob_settings \
+        "/sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference" \
+        "${cpu_settings[energy_pref]}" \
+        "Set CPU energy preference to ${cpu_settings[energy_pref]}"
+    
+    # Apply CPU boost settings
+    local boost_msg="$([[ "$mode" == "PERF" ]] && echo "Enabling" || echo "Disabling") CPU boost"
+    apply_settings cpu_boost "$boost_msg"
+    
+    # Apply SMT settings
+    echot "${cpu_settings[smt]}" \
+        /sys/devices/system/cpu/smt/control \
+        "$([[ "$mode" == "PERF" ]] && echo "Enabling" || echo "Disabling") SMT/Hyperthreading"
+}
+
+# GPU management functions
+configure_gpu() {
+    local mode=$1
+    local has_amdgpu=false
+    
+    # Check if we have any AMD GPUs
+    while IFS= read -r -d '' gpu; do
+        if [[ -f "$gpu" ]] && [[ $(< "$gpu") == "0x1002" ]]; then
+            has_amdgpu=true
+            break
+        fi
+    done < <(find /sys/class/drm -name vendor -print0)
+    
+    if [[ "$has_amdgpu" == "true" ]]; then
+        info "Configuring AMD GPU settings..."
+        
+        # Define GPU settings based on mode
+        declare -A gpu_settings=(
+            [pp_power_profile_mode]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "5")"
+            [power_dpm_force_performance_level]="$([[ "$mode" == "PERF" ]] && echo "high" || echo "low")"
+            [power_dpm_state]="$([[ "$mode" == "PERF" ]] && echo "performance" || echo "battery")"
+        )
+        
+        # Apply settings to all AMD GPUs
+        while IFS= read -r -d '' card; do
+            local card_name=${card##*/}
+            declare -A card_settings=()
+            for setting in "${!gpu_settings[@]}"; do
+                card_settings["$card/$setting"]="${gpu_settings[$setting]}"
+            done
+            apply_settings card_settings "Configured GPU settings for $card_name"
+        done < <(find /sys/class/drm -name "card*" -type d -print0)
+        
+        info "Set GPU power settings to ${mode,,} mode"
+    fi
+}
+
+# Get WiFi card vendor
+get_wifi_vendor() {
+    debug "Checking for WiFi interface"
+    if [[ ! -d /sys/class/net/wlan0 ]]; then
+        debug "No WiFi interface found"
+        echo "none"
+        return
+    fi
+    
+    local vendor
+    debug "Reading WiFi vendor from lspci"
+    vendor=$(lspci -vnn | grep -i network | grep -oE '\[([0-9a-f]{4}:[0-9a-f]{4})\]' | head -n1)
+    debug "Raw vendor string: '$vendor'"
+    
+    case "$vendor" in
+        *"8086"*) debug "Detected Intel WiFi"; echo "intel" ;;
+        *"168c"*) debug "Detected Atheros WiFi"; echo "atheros" ;;
+        *"14e4"*) debug "Detected Broadcom WiFi"; echo "broadcom" ;;
+        *"10ec"*) debug "Detected Realtek WiFi"; echo "realtek" ;;
+        *"02d0"*) debug "Detected MediaTek WiFi"; echo "mediatek" ;;
+        *) debug "Unknown WiFi vendor: '$vendor'"; echo "unknown" ;;
+    esac
+}
+
+# Network management functions
+configure_network() {
+    local mode=$1
+    local wifi_vendor
+    wifi_vendor=$(get_wifi_vendor)
+    
+    # Configure WiFi based on mode
+    if [[ "$wifi_vendor" != "none" ]]; then
+        case "$mode" in
+            MAX_SAVE)
+                info "Disabling Wi-Fi"
+                rfkill block wlan &>/dev/null || true
+                if lsmod | grep -q '^iwlmvm\|^iwlwifi'; then
+                    rmmod iwlmvm iwlwifi &>/dev/null || true
+                fi
+                ;;
+            *)
+                # Define WiFi settings based on mode
+                declare -A wifi_settings=()
+                declare -A iwlwifi_params=(
+                    [power_save]="$([[ "$mode" == "PERF" ]] && echo "0" || echo "1")"
+                    [power_level]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "5")"
+                    [uapsd_disable]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "0")"
+                )
+                declare -A iwlmvm_params=(
+                    [power_scheme]="$([[ "$mode" == "PERF" ]] && echo "1" || echo "3")"
+                )
+
+                [[ "$mode" == "PERF" ]] && info "Enabling Wi-Fi" || info "Configuring Wi-Fi power savings"
+                rfkill unblock wlan &>/dev/null || true
+
+                # Configure vendor-specific settings
+                case "$wifi_vendor" in
+                    intel)
+                        # Configure iwlmvm if loaded
+                        if lsmod | grep -q '^iwlmvm'; then
+                            for param in "${!iwlmvm_params[@]}"; do
+                                wifi_settings["/sys/module/iwlmvm/parameters/$param"]="${iwlmvm_params[$param]}"
+                            done
+                        fi
+                        
+                        # Configure iwlwifi if loaded
+                        if lsmod | grep -q '^iwlwifi'; then
+                            for param in "${!iwlwifi_params[@]}"; do
+                                wifi_settings["/sys/module/iwlwifi/parameters/$param"]="${iwlwifi_params[$param]}"
+                            done
+                        fi
+                        
+                        # Apply settings if any were set
+                        (( ${#wifi_settings[@]} > 0 )) && apply_settings wifi_settings "Configured Intel WiFi power management"
+                        ;;
+                esac
+
+                # Configure power save for active interface
+                if check_device /sys/class/net/wlan0; then
+                    iw dev wlan0 set power_save "$([[ "$mode" == "PERF" ]] && echo "off" || echo "on")" &>/dev/null || true
+                fi
+                ;;
+        esac
+    fi
+
+    # Configure Bluetooth based on mode
+    case "$mode" in
+        PERF)
+            info "Enabling Bluetooth"
+            rfkill unblock bluetooth &>/dev/null || true
+            systemctl start bluetooth || true
+            modprobe bluetooth &>/dev/null || true
+            ;;
+        BATTERY)
+            info "Configuring Bluetooth power savings"
+            rfkill unblock bluetooth &>/dev/null || true
+            systemctl start bluetooth || true
+            
+            # Apply power saving to all Bluetooth modules
+            while IFS= read -r module; do
+                if [[ -f "/sys/module/$module/parameters/power_save" ]]; then
+                    echot "1" "/sys/module/$module/parameters/power_save" \
+                        "Enabling power save for Bluetooth module $module" || true
+                fi
+            done < <(lsmod | awk '/^(bluetooth|hci|btusb|btintel|btrtl|btmtk|btbcm|bnep|rfcomm)/{print $1}')
+            ;;
+        MAX_SAVE)
+            info "Disabling Bluetooth"
+            rfkill block bluetooth &>/dev/null || true
+            systemctl stop bluetooth || true
+            
+            # Unload Bluetooth modules in reverse dependency order
+            while IFS= read -r module; do
+                rmmod "$module" &>/dev/null || true
+            done < <(lsmod | awk '/^(bluetooth|hci|btusb|btintel|btrtl|btmtk|btbcm|bnep|rfcomm)/{print $1}' | tac)
+            ;;
+    esac
+
+    # Configure Ethernet if available
+    if check_device /sys/class/net/eth0; then
+        ethtool --set-eee eth0 eee "$([[ "$mode" == "PERF" ]] && echo "off" || echo "on")" &>/dev/null || \
+            warning "Failed to set EEE state"
+    fi
+}
+
+# Power management functions
+configure_power() {
+    local mode=$1
+    
+    info "Configuring power management settings"
+    
+    # Define PCIe ASPM settings
+    local aspm_policy="$([[ "$mode" == "PERF" ]] && echo "performance" || echo "powersupersave")"
+    local autosuspend_delay="$([[ "$mode" == "PERF" ]] && echo "${CONFIG[USB_AUTOSUSPEND_DELAY_PERF]}" || echo "${CONFIG[USB_AUTOSUSPEND_DELAY_BATTERY]}")"
+
+    echot "$aspm_policy" /sys/module/pcie_aspm/parameters/policy \
+        "Setting PCIe ASPM to $aspm_policy mode"
+
+    # Define USB settings
+    declare -A usb_settings=()
+    
+    # Set USB autosuspend delay
+    echot "$autosuspend_delay" /sys/module/usbcore/parameters/autosuspend \
+        "Setting USB autosuspend delay to ${autosuspend_delay}s"
+
+    # Collect USB devices for power management
+    while IFS= read -r -d '' device; do
+        usb_settings["$device"]="${POWER_CONTROL[$mode]}"
+    done < <(find /sys/bus/usb/devices -name "power/control" -print0)
+    
+    # Apply USB power management settings
+    (( ${#usb_settings[@]} > 0 )) && apply_settings usb_settings "Configured USB device power management"
+
+    # Configure input devices (always on)
+    declare -A input_devices=()
+    while IFS= read -r -d '' device; do
+        local name_file="${device%/*}/device/name"
+        if [[ -f "$name_file" ]] && grep -qE "(Mouse|Keyboard)" "$name_file"; then
+            local usb_path
+            usb_path=$(realpath "$device" | grep -o '/usb[0-9]*/[0-9]-[0-9]*')
+            [[ -n "$usb_path" ]] && input_devices["/sys/bus/usb/devices$usb_path/power/control"]="on"
+        fi
+    done < <(find /sys/class/input -type f -name "name" -print0)
+    
+    # Apply input device power management
+    (( ${#input_devices[@]} > 0 )) && apply_settings input_devices "Configured input device power management"
+}
+
+# System settings functions
+configure_system() {
+    local mode=$1
+    
+    info "Configuring system settings"
+    
+    # Configure Transparent Huge Pages
+    echot "$([[ "$mode" == "PERF" ]] && echo "always" || echo "never")" \
+        /sys/kernel/mm/transparent_hugepage/enabled \
+        "Setting THP to $([[ "$mode" == "PERF" ]] && echo "always" || echo "never")"
+    echot "$([[ "$mode" == "PERF" ]] && echo "defer+madvise" || echo "never")" \
+        /sys/kernel/mm/transparent_hugepage/defrag \
+        "Setting THP defrag to $([[ "$mode" == "PERF" ]] && echo "defer+madvise" || echo "never")"
+
+    # Define kernel parameters based on mode
+    declare -A kernel_params=(
+        ["vm.swappiness"]="$([[ "$mode" == "PERF" ]] && echo "${CONFIG[VM_SWAPPINESS_PERF]}" || echo "${CONFIG[VM_SWAPPINESS_BATTERY]}")"
+        ["vm.dirty_writeback_centisecs"]="$([[ "$mode" == "PERF" ]] && echo "1000" || echo "6000")"
+        ["kernel.timer_migration"]="$([[ "$mode" == "PERF" ]] && echo "0" || echo "1")"
+        ["vm.laptop_mode"]="$([[ "$mode" == "PERF" ]] && echo "0" || echo "5")"
+        ["vm.dirty_ratio"]="$([[ "$mode" == "PERF" ]] && echo "5" || echo "90")"
+        ["vm.dirty_background_ratio"]="$([[ "$mode" == "PERF" ]] && echo "3" || echo "1")"
+        ["kernel.sched_migration_cost_ns"]="$([[ "$mode" == "PERF" ]] && echo "250000" || echo "5000000")"
+        ["vm.dirty_expire_centisecs"]="$([[ "$mode" == "PERF" ]] && echo "1500" || echo "3000")"
+    )
+
+    # Apply kernel parameters
+    local param_configured=false
+    for param in "${!kernel_params[@]}"; do
+        if sysctl -w "$param=${kernel_params[$param]}" &>/dev/null; then
+            param_configured=true
+        fi
+    done
+    [[ "$param_configured" == "true" ]] && info "Set kernel parameters for ${mode,,} mode"
+
+    # Enable Audio MSI
+    echot "1" /sys/module/snd_hda_intel/parameters/enable_msi "Enabling Audio MSI"
+
+    # Define audio settings based on mode
+    declare -A audio_settings=(
+        [power_save]="$([[ "$mode" == "PERF" ]] && echo "0" || echo "1")"
+        [power_save_controller]="$([[ "$mode" == "PERF" ]] && echo "N" || echo "Y")"
+    )
+
+    # Apply audio settings
+    local audio_configured=false
+    for setting in "${!audio_settings[@]}"; do
+        local file="/sys/module/snd_hda_intel/parameters/$setting"
+        if echot "${audio_settings[$setting]}" "$file"; then
+            audio_configured=true
+        fi
+    done
+
+    # Configure audio codecs
+    apply_glob_settings "/sys/class/sound/card*/power/control" \
+        "$([[ "$mode" == "PERF" ]] && echo "on" || echo "auto")" \
+        "Configured audio power management"
+
+    # Define storage settings based on mode
+    declare -A storage_settings=(
+        [link_policy]="$([[ "$mode" == "PERF" ]] && echo "max_performance" || echo "med_power_with_dipm")"
+        [scheduler]="$([[ "$mode" == "PERF" ]] && echo "mq-deadline" || echo "bfq")"
+    )
+
+    # Apply SATA link power management
+    apply_glob_settings \
+        "/sys/class/scsi_host/host*/link_power_management_policy" \
+        "${storage_settings[link_policy]}" \
+        "Set SATA link power management to ${storage_settings[link_policy]}"
+
+    # Apply I/O scheduler (only for HDDs)
+    while IFS= read -r -d '' block; do
+        local rotational="/sys/block/${block##*/}/queue/rotational"
+        # Check if it's a rotational drive (HDD)
+        if [[ -f "$rotational" ]] && [[ $(< "$rotational") == "1" ]]; then
+            echot "${storage_settings[scheduler]}" "/sys/block/${block##*/}/queue/scheduler" \
+                "Set I/O scheduler to ${storage_settings[scheduler]} for HDD ${block##*/}"
+        else
+            debug "Skipping I/O scheduler setting for non-rotational device ${block##*/}"
+        fi
+    done < <(find /sys/block -name "sd*" -print0)
+
+    # Apply disk power management
+    apply_glob_settings \
+        "/sys/block/sd*/device/power/control" \
+        "${POWER_CONTROL[$mode]}" \
+        "Setting disk power management to ${POWER_CONTROL[$mode]}"
+
+    # Configure display refresh rate if available
+    if command -v kscreen-doctor &>/dev/null; then
+        local refresh_rate="$([[ "$mode" == "PERF" ]] && echo "${CONFIG[REFRESH_RATE_PERF]}" || echo "${CONFIG[REFRESH_RATE_BATTERY]}")"
+        if kscreen-doctor output.eDP-1.mode.1920x1080@"$refresh_rate" &>/dev/null; then
+            info "Setting display refresh rate to ${refresh_rate}Hz"
+        fi
+    fi
+
+    # Configure RTC wakealarm
+    echot "$([[ "$mode" == "PERF" ]] && echo "1" || echo "0")" \
+        /sys/class/rtc/rtc0/wakealarm \
+        "Setting wakealarm control"
+}
+
+show_help() {
+    printf "%b v%s\\n\\n" "${NAME^}" "$VERSION"
+    cat << EOF
+A power management script that switches between performance and power saving modes.
+
+Usage: 
+    ${NAME@Q} <mode>
+    ${NAME@Q} <option>
+
+Modes:
+    performance  High performance mode
+                 Aliases: perf, pf, ac
+    
+    powersaving  Power saving mode (keeps wireless on)
+                 Aliases: power, ps, battery
+    
+    maxsaving    Maximum power saving mode (disables wireless)
+                 Aliases: max, maxpower, mps
+
+Options:
+    -h, --help     Show this help message
+    -v, --version  Show version information
+
+Configuration:
+    File: ${CONFIG_PATH@Q}
+    Settings can be modified by editing the configuration file.
+
+Examples:
+    ${NAME@Q} perf     # Switch to performance mode
+    ${NAME@Q} power    # Switch to power saving mode
+    ${NAME@Q} max      # Switch to maximum power saving mode
+EOF
+}
+
+# Main execution
+main() {
+    if (( DEBUG )); then
+        debug "Debug mode enabled"
+        debug "Script version: ${VERSION@Q}"
+        debug "Running as user: ${USER@Q} (EUID: $EUID)"
+        debug "Configuration path: ${CONFIG_PATH@Q}"
+    fi
+    
+    # Check dependencies first
+    check_dependencies
+    
+    # Ensure config directory exists
+    ensure_config_dir
+    
+    # Source config if it exists
+    [[ -f "$CONFIG_PATH" ]] && source "$CONFIG_PATH"
+    
+    # Validate configuration
+    validate_config
+    
+    # Parse command line arguments
+    case "${1:-}" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -v|--version)
+            printf "%b version %s\\n" "${NAME@Q}" "$VERSION"
+            exit 0
+            ;;
+        power|powersaving|battery|ps)
+            MODE=BATTERY
+            ;;
+        perf|performance|ac|pf)
+            MODE=PERF
+            ;;
+        max|maxsaving|maxpower|mps)
+            MODE=MAX_SAVE
+            ;;
+        *)
+            error "Invalid mode. Use --help for usage information"
+            ;;
+    esac
+
+    need_root "$@"
+    
+    info "Switching to ${POWER_MODES[$MODE]}"
+    
+    configure_cpu "$MODE"
+    configure_gpu "$MODE"
+    configure_network "$MODE"
+    configure_power "$MODE"
+    configure_system "$MODE"
+    
+    success "Successfully switched to ${POWER_MODES[$MODE]}"
+}
+
+main "$@"

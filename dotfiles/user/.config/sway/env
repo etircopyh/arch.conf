@@ -2,6 +2,8 @@
 # SwayWM specific variables
 #
 
+#WLR_DRM_NO_MODIFIERS=1
+
 # Session XDG specification
 XDG_SESSION_TYPE=wayland
 XDG_SESSION_DESKTOP=sway
@@ -13,13 +15,11 @@ XKB_DEFAULT_LAYOUT=us
 
 XIVIEWER=imv
 
-# QT 
+# Qt
 QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-#QT_WAYLAND_FORCE_DPI=102
 QT_AUTO_SCREEN_SCALE_FACTOR=0
 
 # Wayland Support Variables
-#GDK_BACKEND=wayland
 ELM_ACCEL=gl
 ELM_DISPLAY=wl
 ELM_ENGINE=wayland_egl
@@ -28,6 +28,3 @@ CLUTTER_BACKEND=wayland
 SDL_VIDEODRIVER=wayland
 ECORE_EVAS_ENGINE=wayland_egl
 _JAVA_AWT_WM_NONREPARENTING=1
-
-
-WLR_DRM_DEVICES=/dev/dri/card0

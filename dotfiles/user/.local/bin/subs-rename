@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -o errexit
+#set -o nounset
+set -o pipefail
+#IFS=$'\n\t'
+
+movie_name=( $(basename -s .avi -a *.avi) )
+
+subs=( $(basename -a "*.srt") )
+
+
+for ((i=0; i<${#subs[@]}; i++)); do
+    mv -v "${subs[$i]}" "${movie_name[$i]}.srt"
+done

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+startcut="$1"
+endcut="$2"
+file="$3"
+out_format="${4:-${file##*.}}"
+
+ffmpeg -i "$file" -hide_banner -map_metadata -1 -map_chapters -1 -ss "$startcut" -codec copy -to "$endcut" -movflags +faststart -flags +cgop "$file"_output."$out_format"

@@ -1,0 +1,11 @@
+[Unit]
+Description=Per-window keyboard layout daemon for Sway
+
+[Service]
+Type=simple
+ExecStart=swaykbdd
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical-session.target

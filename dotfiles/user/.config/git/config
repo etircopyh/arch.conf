@@ -1,81 +1,125 @@
 [core]
     excludesfile = ~/.config/git/ignore
-    editor = nvim
-    pager = delta
+    editor       = nvim
+    pager        = delta
+[init]
+    defaultBranch = master
 [interactive]
     diffFilter = delta --color-only
 [user]
-    name = Ivan
-    email = etircopyhdot@gmail.com
+    name       = Ivan
+    email      = etircopyhdot@gmail.com
     signingkey = FCF974B56A98CF81
 [alias]
-    l = log --pretty=oneline -n 50 --graph --abbrev-commit
-    st = status
-    ci = commit
-    cim = commit -m
-    unstage = reset HEAD --
+    l             = log --pretty=oneline -n 50 --graph --abbrev-commit
+    ls            = ls-files
+    st            = status
+    ci            = commit
+    cim           = commit -m
+    amend         = commit --amend
+    unstage       = reset HEAD --
     rmlocalcommit = reset HEAD~
-    last = log -1 HEAD
-    logt = log --graph --decorate --color=auto --oneline --all
+    last          = log -1 HEAD
+    logt          = log --graph --decorate --color=auto --oneline --all
+
 [color]
-    ui = true
-    status = auto
-    branch = auto
+    ui          = true
+    status      = auto
+    branch      = auto
     interactive = auto
-    diff = auto
+    diff        = auto
+[color "branch"]
+    current = red reverse
+    local  = blue
+    remote = green
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old  = red bold
+    new  = green bold
+[color "status"]
+    added     = yellow
+    changed   = green
+    untracked = cyan
+[color "grep"]
+    filename   = magenta
+    linenumber = green
+
 [pretty]
     fixes = Fixes: %h (\"%s\")
 [credential]
-    helper = cache --timeout 14400
+    helper   = cache --timeout 14400
     username = etircopyh
 [gpg]
     program = gpg2
 
 [commit]
     template = ~/.config/git/message
-    verbose = true
+    verbose  = true
 
 [tag]
     gpgsign = true
 
 [pull]
-    rebase = false
+    default = current
+    rebase  = true
 [push]
     default = current
 
 [rebase]
-    autosquash = true
+    autoSquash = true
+    autoStash  = true
+    stat       = true
 
 [grep]
     lineNumber = true
-[color "grep"]
-    filename = magenta
-    linenumber = green
 
+#[branch]
+    #autoSetupRebase = true
+
+[pager]
+    diff   = delta
+    log    = delta
+    reflog = delta
+    show   = delta
 [delta]
-    features = decorations
+    features               = decorations
     whitespace-error-style = 22 reverse
-    plus-color = "#012800"
-    minus-color = "#340001"
-    theme = 'Monokai Extended'
+    plus-style             = "syntax #012800"
+    minus-style            = "syntax #340001"
+    syntax-theme           = 'zenburn'
+    navigate = true
+[delta "interactive"]
+    keep-plus-minus-markers = false
 [delta "decorations"]
     commit-decoration-style = bold yellow box ul
-    file-style = bold yellow ul
-    file-decoration-style = none
+    file-style              = bold yellow ul
+    file-decoration-style   = none
 
 [diff]
-    tool = nvimdiff
-    guitool = kompare
+    tool       = nvimdiff
+    guitool    = kompare
+    colorMoved = zebra
+    #mnemonicprefix = true
 [difftool]
     prompt = false
 [difftool "nvimdiff"]
-    cmd = nvim -d $LOCAL $REMOTE -c '$wincmd w' -c 'wincmd J'
+    cmd = nvim -d \"$LOCAL\" \"$REMOTE\"
 
 [merge]
     tool = nvimdiff
 [mergetool]
     keepBackup = false
 [mergetool "nvimdiff"]
-    # vim-fugitive mergetool
     cmd = nvim -f -c \"Gdiffsplit!\" \"$MERGED\"
-    # cmd = nvim -d $LOCAL $REMOTE $MERGED -c '$wincmd w' -c 'wincmd J'
+    #cmd = nvim -d $LOCAL $REMOTE $MERGED
+
+# This is primarily for setting user.email differently at work
+# and needs to go at the bottom so it overwrites above settings
+[include]
+    path = ~/.config/git/config.local
+
+# Override potential ~/.gitconfig.local for personal git directory
+# within work machine
+[includeIf "gitdir/i:~/Git-personal/"]
+    path = ~/.gitconfig.personal

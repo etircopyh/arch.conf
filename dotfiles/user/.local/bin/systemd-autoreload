@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Automatically reload systemd unit files when they're changed.
+
+set -e
+
+inotifywait \
+  --event create \
+  --event delete \
+  --event close_write \
+  --event move \
+  --monitor \
+  --recursive \
+  /usr/lib/systemd/user/ \
+  "$HOME/.config/systemd/user/" \
+  2> /dev/null | \
+  while read -r LINE; do
+    case "$LINE" in
+      *.service) ;;
+      *.timer) ;;
+      *.socket) ;;
+      *.conf) ;;
+      *.target) ;;
+      *) continue;;
+    esac
+
+    UNIT=$(echo "$LINE" | cut -d" " -f 3)
+    echo "$UNIT changed, reloading systemd user units."
+    systemctl --user daemon-reload
+  done
+

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+command -p sqlite3 -init "${XDG_CONFIG_HOME:-$HOME/.config}/sqlite3/sqliterc"

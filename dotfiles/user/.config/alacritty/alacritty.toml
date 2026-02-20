@@ -1,0 +1,111 @@
+general.import = [
+    "/home/etircopyh/.config/alacritty/themes/zenburn.toml"
+]
+
+[colors]
+draw_bold_text_with_bright_colors = true
+
+[colors.bright]
+black = "#666666"
+blue = "#7AA6DA"
+cyan = "#70C0B1"
+green = "#B9CA4A"
+magenta = "#C397D8"
+red = "#D54E53"
+white = "#EAEAEA"
+yellow = "#E7C547"
+
+[colors.cursor]
+cursor = "#B21363"
+text = "#F1C1C1"
+
+[colors.dim]
+black = "#131415"
+blue = "#556A7D"
+cyan = "#5B7D78"
+green = "#777C44"
+magenta = "#75617B"
+red = "#864343"
+white = "#828482"
+yellow = "#9E824C"
+
+[colors.normal]
+black = "#1D1F21"
+blue = "#81A2BE"
+cyan = "#8ABEB7"
+green = "#B5BD68"
+magenta = "#B294BB"
+red = "#CC6666"
+white = "#C5C8C6"
+yellow = "#F0C674"
+
+[colors.primary]
+background = "#191919"
+foreground = "#EAEAEA"
+
+[colors.selection]
+background = "CellForeground"
+text = "CellBackground"
+
+
+[env]
+TERM = "xterm-256color"
+
+[font]
+size = 14.0
+
+[font.bold]
+family = "terminal"
+style = "Bold"
+
+[font.bold_italic]
+family = "terminal"
+style = "Bold Italic"
+
+[font.italic]
+family = "terminal"
+style = "Italic"
+
+[font.normal]
+family = "terminal"
+style = "Regular"
+
+[[keyboard.bindings]]
+action = "Paste"
+key = "V"
+mods = "Control"
+
+[[keyboard.bindings]]
+action = "Copy"
+key = "C"
+mods = "Control|Shift"
+
+[[keyboard.bindings]]
+action = "SpawnNewInstance"
+key = "T"
+mods = "Control|Shift"
+
+[[mouse.bindings]]
+action = "PasteSelection"
+mouse = "Middle"
+
+[scrolling]
+history = 10000
+multiplier = 3
+
+[selection]
+save_to_clipboard = true
+
+[window]
+decorations = "none"
+decorations_theme_variant = "Dark"
+dynamic_padding = true
+dynamic_title = true
+
+[window.dimensions]
+columns = 0
+lines = 0
+
+[window.padding]
+x = 0
+y = 0

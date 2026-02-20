@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Restart PulseAudio service
+#
+# Fix occasional sound absence
+
+if [ -x "$(command -v pipewire)" ]; then
+    AUDIOSERVER='pipewire.service pipewire-session-manager.service pipewire-pulse.service'
+elif [ -x "$(command -v pulseaudio)" ]; then
+    AUDIOSERVER='pulseaudio.service'
+fi
+
+systemctl --user daemon-reload
+systemctl --user restart "$AUDIOSERVER" 2> /dev/null || printf "\033[0;31mCouldn't restart audio server.\033[0m"

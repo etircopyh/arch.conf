@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -n "${WAYLAND_DISPLAY}" ]; then
+    command -p chromium --ozone-platform=wayland --enable-features=UseOzonePlatform "$@"
+else
+    command -p chromium --ozone-platform=x11 --enable-features=UseOzonePlatform "$@"
+fi

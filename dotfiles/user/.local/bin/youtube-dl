@@ -1,0 +1,4 @@
+#!/bin/sh
+# Wrapper to invoke yt-dlp when apps ask for youtube-dl
+
+exec yt-dlp "$@"

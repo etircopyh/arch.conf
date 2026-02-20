@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+lsblk -o name,fstype,label,mountpoint
+echo 'Which device you wish to mount? '
+select drive in $(lsblk --noheadings --raw -o NAME,MOUNTPOINT | awk '$1~/[[:digit:]]/ && $2 == ""'); do
+    device=$drive
+    break;
+done
+
+# read -r -e -p 'Device to mount: ' device
+username=$(id -n -u)
+devicenametomount=$(lsblk -o name,label | grep "$device" | awk '{print $2,$3}')
+
+#sudo mkdir -p /run/media/"$username"/"$devicenametomount"
+sudo mount --mkdir "/dev/$device" "/run/media/$username/$devicenametomount"

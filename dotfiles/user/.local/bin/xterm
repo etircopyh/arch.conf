@@ -1,0 +1,6 @@
+#!/bin/sh
+#
+# Wrapper to work around glib's stupid hardcoded terminal name.
+#
+
+exec $TERMINAL "$@"

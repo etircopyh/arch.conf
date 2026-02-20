@@ -1,0 +1,8 @@
+# Theme
+--theme="zenburn"
+
+# Use italic text on terminal (not every terminal supports it)
+--italic-text=always
+
+# Enable mouse scrolling support
+--pager="less -FR"

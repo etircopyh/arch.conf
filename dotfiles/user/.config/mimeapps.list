@@ -5,10 +5,10 @@ image/webp=imv.desktop
 image/png=imv.desktop
 image/gif=imv.desktop
 image/jpeg=imv.desktop
-text/html=firefox.desktop
-x-scheme-handler/http=firefox.desktop
-x-scheme-handler/https=firefox.desktop
-x-scheme-handler/mailto=firefox.desktop
+text/html=waterfox.desktop
+x-scheme-handler/http=waterfox.desktop
+x-scheme-handler/https=waterfox.desktop
+x-scheme-handler/mailto=waterfox.desktop
 x-scheme-handler/tg=kotatogramdesktop.desktop
 x-scheme-handler/magnet=org.qbittorrent.qBittorrent.desktop
 
@@ -43,4 +43,4 @@ text/x-log=neovim.desktop
 text/x-c=neovim.desktop
 text/x-shellscript=neovim.desktop
 
-application/pdf=firefox.desktop;
+application/pdf=waterfox.desktop;

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+readonly TMPFILE="$(mktemp)"
+readonly AURHELPER=$(if command -v yay; then echo 'yay'; else echo 'paru'; fi)
+
+[ "$EUID" = 1000 ] && sudo true
+
+local RATE_MIRRORS_TOP_MIRRORS_NUMBER_TO_RETEST=7
+
+rate-mirrors --save="$TMPFILE" arch --completion=1 --sort-mirrors-by=score_asc --max-delay=21600 && \
+sudo mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist-backup && \
+sudo mv "$TMPFILE" /etc/pacman.d/mirrorlist && \
+sudo paccache -rk3; $AURHELPER -Scc --noconfirm
+$AURHELPER -Syyu

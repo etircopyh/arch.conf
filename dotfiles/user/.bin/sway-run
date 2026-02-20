@@ -1,8 +1,0 @@
-#!/bin/sh
-
-set -o allexport
-. "$HOME"/.config/sway/env
-set +o allexport
-
-
-exec dbus-run-session sway

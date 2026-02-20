@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ "$1" = "run" ]; then
+    if [ -n "${WAYLAND_DISPLAY}" ]; then
+        command -p flatpak --socket=wayland "$@"
+    else
+        command -p flatpak "$@"
+    fi
+else
+    command -p flatpak "$@"
+fi

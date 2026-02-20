@@ -1,0 +1,1 @@
+SUBSYSTEM=="kvmfr", OWNER="etircopyh", GROUP="kvm", MODE="0660"

@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = usr/share/applications/*.desktop
+
+[Action]
+Description = Making *.desktop files to look up the PATH
+Depends = sed
+Exec = /bin/sh -c "sed -i 's/Exec=\/usr\/bin\//Exec=/' /usr/share/applications/*.desktop"
+When = PostTransaction

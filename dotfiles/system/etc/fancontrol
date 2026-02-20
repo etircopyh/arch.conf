@@ -1,7 +1,0 @@
-INTERVAL=10
-FCTEMPS=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/pwm1=/sys/devices/platform/coretemp.0/hwmon/hwmon[[:print:]]*/temp1_input
-FCFANS=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/pwm1=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/fan1_input
-MINTEMP=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/pwm1=43
-MAXTEMP=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/pwm1=66
-MINSTART=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/pwm1=40
-MINSTOP=/sys/devices/platform/asus-nb-wmi/hwmon/hwmon[[:print:]]*/pwm1=10

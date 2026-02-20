@@ -29,8 +29,10 @@ format = """\
     $php\
     $purescript\
     $python\
+    $perl\
     $ruby\
     $rust\
+    $cmake\
     $zig\
 
     $docker_context\
@@ -52,6 +54,7 @@ format = """\
 
 # Git
 [git_branch]
+always_show_remote = false
 symbol = " "
 style = "bold #C50A96"
 # truncation_length = 4
@@ -64,8 +67,6 @@ commit_hash_length = 7
 disabled = false
 
 [git_state]
-progress_divider = " of "
-cherry_pick = "🍒 PICKING"
 disabled = false
 
 [git_status]
@@ -81,8 +82,6 @@ stashed = ""
 modified = "[●](yellow)"
 staged = "[●](green)"
 style = "white"
-staged_count.enabled = false
-staged_count.style = "dimmed green"
 disabled = false
 
 # Programming languages
@@ -90,17 +89,15 @@ disabled = false
 symbol = " "
 pyenv_version_name = false
 pyenv_prefix = "pyenv "
-scan_for_pyfiles = true
 style = "bold #FED74C"
 disabled = false
+
+[perl]
+symbol = " "
 
 [php]
 symbol = " "
 style = "bold #707FB4"
-disabled = true
-
-[haskell]
-symbol = " "
 disabled = true
 
 [golang]
@@ -136,6 +133,11 @@ symbol = " "
 style = "bold #AD1401"
 disabled = false
 
+[cmake]
+symbol = "喝 "
+style = "bold blue"
+disabled = false
+
 [rust]
 symbol = " "
 style = "bold #DEA584"
@@ -145,6 +147,7 @@ disabled = false
 [username]
 style_root = "bold red"
 style_user = "bold #98C379"
+format = "[ $user]($style) "
 show_always = true
 disabled = false
 
@@ -155,7 +158,12 @@ trim_at = "."
 disabled = false
 
 [directory]
-format = "[$path]($style)[$read_only]($read_only_style) "
+format = "in [$path]($style)[$read_only]($read_only_style) "
+style = "bold green"
+read_only = " ro"
+read_only_style = "red"
+home_symbol = "home"
+disabled = false
 
 [jobs]
 symbol = "+ "
@@ -178,18 +186,15 @@ disabled = false
 
 [aws]
 symbol = " "
-displayed_items = "all"
 style = "bold #F58C0F"
 disabled = false
 
 [terraform]
 symbol = "💠 "
-show_version = false
 style = "bold 105"
 disabled = false
 
 [nix_shell]
-use_name = true
 impure_msg = "impure shell"
 pure_msg = "pure shell"
 symbol = " "
@@ -200,11 +205,12 @@ disabled = false
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 vicmd_symbol = "[❮](bold green)"
-use_symbol_for_status = true
 
 [cmd_duration]
 format = "took [$duration]($style) "
+style = "bold blue"
 min_time = 5000
+disabled = false
 
 [time]
 use_12hr = true
@@ -218,6 +224,9 @@ disabled = true
 symbol = "📦 "
 style = "bold 208"
 display_private = false
+disabled = true
+
+[status]
 disabled = true
 
 [line_break]

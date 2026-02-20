@@ -1,0 +1,17 @@
+# ZSH configuration directory
+export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+export ZHOME="${ZDOTDIR:-$HOME/.zsh}"
+
+[[ -f "$ZHOME/.zshenv.local" ]] && source "$ZHOME/.zshenv.local"
+
+# Ensure that a non-login, non-interactive shell has a defined environment.
+if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "$ZHOME/.zprofile" ]]; then
+    source "$ZHOME/.zprofile"
+fi
+
+# Personal bins
+export PATH="${XDG_BIN_HOME:-$HOME/.local/bin}:${CARGO_HOME:-$HOME/.local/lib/cargo}/bin:${GOBIN:-$(go env GOPATH 2>/dev/null)/bin}:${PYTHONUSERBASE:-$HOME/.local/lib/python}/bin:${XDG_DATA_HOME:-$HOME/.local/share}/nvm/current/bin:$PATH"
+
+
+# Nix package manager
+[[ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]] && source "$HOME/.nix-profile/etc/profile.d/nix.sh"

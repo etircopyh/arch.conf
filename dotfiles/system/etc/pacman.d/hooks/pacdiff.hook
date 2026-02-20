@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Reviewing .pacnew and .pacsave files
+Exec = /usr/bin/pacdiff -f
+When = PostTransaction
+Depends = git
+Depends = pacman-contrib
