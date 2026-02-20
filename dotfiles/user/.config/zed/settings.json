@@ -11,17 +11,7 @@
     {
       "host": "oracle",
       "args": [],
-      "projects": [
-        {
-          "paths": ["/home/etirnal"],
-        },
-        {
-          "paths": ["/home/etirnal/GIT"],
-        },
-        {
-          "paths": ["/home/etirnal/GIT/containedcode"],
-        },
-      ],
+      "projects": [],
     },
   ],
   "$schema": "https://raw.githubusercontent.com/zed-industries/zed/refs/heads/main/assets/settings/default.json",
