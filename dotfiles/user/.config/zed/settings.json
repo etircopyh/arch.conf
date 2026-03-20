@@ -38,15 +38,31 @@
     },
   },
   "agent_servers": {
-    "gemini": {
-      "command": "gemini",
-      "args": ["--experimental-acp"],
-      "env": {},
-    },
-    "OpenCode": {
+    "gemini-custom": {
       "type": "custom",
-      "command": "opencode",
-      "args": ["acp"],
+      "command": "gemini",
+      "args": [
+        "--experimental-acp"
+      ]
+    },
+    "qwen-code": {
+      "type": "registry"
+    },
+    "kilo": {
+      "type": "registry"
+    },
+    "opencode": {
+      "type": "registry",
+    },
+    "amp-acp": {
+      "type": "registry",
+    },
+    "iflow": {
+      "type": "custom",
+      "command": "iflow",
+      "args": [
+        "--experimental-acp"
+      ],
       "env": {},
     },
   },
@@ -91,7 +107,7 @@
           "max_completion_tokens": 128000,
           "capabilities": {
             "tools": true,
-            "images": false,
+            "images": true,
             "parallel_tool_calls": true,
             "chat_completions": true,
             "prompt_cache_key": false,
@@ -104,11 +120,24 @@
           "max_completion_tokens": 128000,
           "capabilities": {
             "tools": true,
-            "images": false,
+            "images": true,
             "parallel_tool_calls": true,
             "chat_completions": true,
-            "prompt_cache_key": false,
-          },
+            "prompt_cache_key": false
+          }
+        },
+        {
+          "name": "gpt-5.4",
+          "display_name": "GPT-5.4",
+          "max_tokens": 400000,
+          "max_completion_tokens": 128000,
+          "capabilities": {
+            "tools": true,
+            "images": true,
+            "parallel_tool_calls": true,
+            "chat_completions": true,
+            "prompt_cache_key": false
+          }
         },
         {
           "name": "gpt-oss-120b-medium",
@@ -191,6 +220,19 @@
         {
           "name": "gemini-3-pro-preview",
           "display_name": "Gemini 3 Pro Preview",
+          "max_tokens": 1048576,
+          "max_completion_tokens": 65535,
+          "capabilities": {
+            "tools": true,
+            "images": true,
+            "parallel_tool_calls": true,
+            "chat_completions": true,
+            "prompt_cache_key": false,
+          },
+        },
+        {
+          "name": "gemini-3.1-pro-preview",
+          "display_name": "Gemini 3.1 Pro Preview",
           "max_tokens": 1048576,
           "max_completion_tokens": 65535,
           "capabilities": {
@@ -385,7 +427,28 @@
           {
             "name": "gpt-5.2",
             "display_name": "GPT-5.2",
-            "max_tokens": 200000,
+            "max_tokens": 400000,
+            "max_completion_tokens": 128000,
+            "capabilities": {
+              "tools": true,
+              "images": false,
+              "parallel_tool_calls": true,
+              "chat_completions": true,
+              "prompt_cache_key": false,
+            },
+          },
+          {
+            "name": "gpt-5.2-codex",
+            "display_name": "GPT-5.2 Codex",
+            "max_tokens": 400000,
+            "max_completion_tokens": 128000,
+            "capabilities": {
+              "tools": true,
+              "images": false,
+              "parallel_tool_calls": true,
+              "chat_completions": true,
+              "prompt_cache_key": false,
+            },
           },
           {
             "name": "gpt-5.1-codex-mini",
@@ -396,6 +459,19 @@
             "name": "gpt-5.3-codex",
             "display_name": "GPT-5.3 Codex",
             "max_tokens": 400000,
+          },
+          {
+            "name": "gpt-5.4",
+            "display_name": "GPT-5.4",
+            "max_tokens": 400000,
+            "max_completion_tokens": 128000,
+            "capabilities": {
+              "tools": true,
+              "images": true,
+              "parallel_tool_calls": true,
+              "chat_completions": true,
+              "prompt_cache_key": false
+            }
           },
           {
             "name": "gpt-oss-120b-medium",
@@ -470,6 +546,19 @@
           {
             "name": "gemini-3-pro-preview",
             "display_name": "Gemini 3 Pro Preview",
+            "max_tokens": 1048576,
+            "max_completion_tokens": 65535,
+            "capabilities": {
+              "tools": true,
+              "images": true,
+              "parallel_tool_calls": true,
+              "chat_completions": true,
+              "prompt_cache_key": false,
+            },
+          },
+          {
+            "name": "gemini-3.1-pro-preview",
+            "display_name": "Gemini 3.1 Pro Preview",
             "max_tokens": 1048576,
             "max_completion_tokens": 65535,
             "capabilities": {
@@ -771,33 +860,33 @@
       },
       {
         "provider": "proxy",
-        "model": "gemini-3-pro-preview",
-        "enable_thinking": false,
+        "model": "gemini-3.1-pro-preview",
+        "enable_thinking": true,
       },
       {
         "provider": "proxy",
         "model": "gemini-3-flash-preview",
-        "enable_thinking": false,
+        "enable_thinking": true,
       },
       {
         "provider": "google",
         "model": "gemini-3-flash-preview",
-        "enable_thinking": false,
+        "enable_thinking": true,
       },
       {
         "provider": "google",
-        "model": "gemini-3-pro-preview",
-        "enable_thinking": false,
+        "model": "gemini-3.1-pro-preview",
+        "enable_thinking": true,
       },
       {
         "provider": "proxy",
         "model": "kimi-k2.5",
-        "enable_thinking": false,
+        "enable_thinking": true,
       },
       {
         "provider": "google",
         "model": "kimi-k2.5",
-        "enable_thinking": false,
+        "enable_thinking": true,
       },
       {
         "provider": "proxy",
@@ -929,7 +1018,12 @@
     "max_scroll_history_lines": 50000,
     "detect_venv": {
       "on": {
-        "directories": [".env", "env", ".venv", "venv"],
+        "directories": [
+          ".env",
+          "env",
+          ".venv",
+          "venv"
+        ],
         "activate_script": "default",
       },
     },
@@ -973,7 +1067,10 @@
     "Python Dev": {
       "languages": {
         "Python": {
-          "language_servers": ["basedpyright", "ruff"],
+          "language_servers": [
+            "basedpyright",
+            "ruff"
+          ],
           "inlay_hints": {
             "enabled": true,
           },
@@ -1023,7 +1120,11 @@
     "JavaScript": {
       "tab_size": 2,
       "format_on_save": "on",
-      "language_servers": ["!typescript-language-server", "vtsls", "..."],
+      "language_servers": [
+        "!typescript-language-server",
+        "vtsls",
+        "..."
+      ],
       "inlay_hints": {
         "enabled": true,
         "show_parameter_hints": true,
@@ -1040,7 +1141,11 @@
     "TypeScript": {
       "tab_size": 2,
       "format_on_save": "on",
-      "language_servers": ["!typescript-language-server", "vtsls", "..."],
+      "language_servers": [
+        "!typescript-language-server",
+        "vtsls",
+        "..."
+      ],
       "inlay_hints": {
         "enabled": true,
         "show_parameter_hints": true,
@@ -1057,7 +1162,11 @@
     "TSX": {
       "tab_size": 2,
       "format_on_save": "on",
-      "language_servers": ["!typescript-language-server", "vtsls", "..."],
+      "language_servers": [
+        "!typescript-language-server",
+        "vtsls",
+        "..."
+      ],
       "inlay_hints": {
         "enabled": true,
         "show_parameter_hints": true,
@@ -1086,11 +1195,18 @@
     "Shell Script": {
       "tab_size": 2,
       "format_on_save": "on",
-      "language_servers": ["bash-language-server", "..."],
+      "language_servers": [
+        "bash-language-server",
+        "..."
+      ],
       "formatter": {
         "external": {
           "command": "shfmt",
-          "arguments": ["-i", "2", "-s"],
+          "arguments": [
+            "-i",
+            "2",
+            "-s"
+          ],
         },
       },
       "inlay_hints": {
@@ -1100,11 +1216,20 @@
     "Lua": {
       "tab_size": 2,
       "format_on_save": "on",
-      "language_servers": ["lua-language-server", "..."],
+      "language_servers": [
+        "lua-language-server",
+        "..."
+      ],
       "formatter": {
         "external": {
           "command": "stylua",
-          "arguments": ["--indent-type", "Spaces", "--indent-width", "2", "-"],
+          "arguments": [
+            "--indent-type",
+            "Spaces",
+            "--indent-width",
+            "2",
+            "-"
+          ],
         },
       },
       "inlay_hints": {

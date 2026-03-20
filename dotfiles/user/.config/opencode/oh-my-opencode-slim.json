@@ -1,0 +1,98 @@
+{
+  "preset": "dynamic",
+  "presets": {
+    "dynamic": {
+      "orchestrator": {
+        "model": "cliproxyapi/kimi-k2.5",
+        "skills": [
+          "*"
+        ],
+        "mcps": [
+          "websearch"
+        ]
+      },
+      "oracle": {
+        "model": "cliproxyapi/glm-5",
+        "variant": "high",
+        "skills": [],
+        "mcps": []
+      },
+      "designer": {
+        "model": "cliproxyapi/gemini-3.1-pro-preview",
+        "variant": "medium",
+        "skills": [
+          "agent-browser"
+        ],
+        "mcps": []
+      },
+      "explorer": {
+        "model": "opencode/gpt-5-nano",
+        "variant": "low",
+        "skills": [],
+        "mcps": []
+      },
+      "librarian": {
+        "model": "opencode/kimi-k2.5-free",
+        "variant": "low",
+        "skills": [],
+        "mcps": [
+          "websearch",
+          "context7",
+          "grep_app"
+        ]
+      },
+      "fixer": {
+        "model": "opencode/kimi-k2.5-free",
+        "variant": "low",
+        "skills": [],
+        "mcps": []
+      }
+    }
+  },
+  "fallback": {
+    "enabled": true,
+    "timeoutMs": 15000,
+    "chains": {
+      "orchestrator": [
+        "cliproxyapi/glm-5",
+        "opencode/gpt-5-nano",
+        "opencode/kimi-k2.5-free",
+        "opencode/big-pickle"
+      ],
+      "oracle": [
+        "cliproxyapi/kimi-k2.5",
+        "cliproxyapi/glm-5",
+        "opencode/gpt-5-nano",
+        "opencode/kimi-k2.5-free",
+        "opencode/big-pickle"
+      ],
+      "designer": [
+        "cliproxyapi/gemini-3.1-pro-preview",
+        "cliproxyapi/gemini-3-flash-preview",
+        "cliproxyapi/kimi-k2.5",
+        "opencode/kimi-k2.5-free",
+        "opencode/big-pickle"
+      ],
+      "explorer": [
+        "cliproxyapi/gemini-3-flash-preview",
+        "cliproxyapi/minimax-m2.5",
+        "cliproxyapi/glm-5",
+        "opencode/gpt-5-nano",
+        "opencode/big-pickle"
+      ],
+      "librarian": [
+        "cliproxyapi/glm-5",
+        "cliproxyapi/gemini-3-flash-preview",
+        "opencode/gpt-5-nano",
+        "opencode/big-pickle"
+      ],
+      "fixer": [
+        "cliproxyapi/glm-5",
+        "cliproxyapi/kimi-k2.5",
+        "opencode/kimi-k2.5-free",
+        "opencode/gpt-5-nano",
+        "opencode/big-pickle"
+      ]
+    }
+  }
+}

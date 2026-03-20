@@ -1,0 +1,77 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
+  "model_fallback": false,
+  "agents": {
+    "plan": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "build": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    },
+    "sisyphus": {
+      "model": "cliproxyapi/kimi-k2.5",
+      "fallback_models": [
+        "cliproxyapi/glm-5"
+      ]
+    },
+    "sisyphus-junior": {
+      "model": "cliproxyapi/glm-5"
+    },
+    "atlas": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "hephaestus": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "prometheus": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "metis": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "momus": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "librarian": {
+      "model": "cliproxyapi/glm-5"
+    },
+    "explore": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    },
+    "oracle": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    },
+    "OpenCode-Builder": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    },
+    "multimodal-looker": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    }
+  },
+  "categories": {
+    "deep": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "ultrabrain": {
+      "model": "cliproxyapi/kimi-k2.5"
+    },
+    "artistry": {
+      "model": "cliproxyapi/gemini-3.1-pro-preview"
+    },
+    "quick": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    },
+    "writing": {
+      "model": "cliproxyapi/gemini-3-flash-preview"
+    },
+    "visual-engineering": {
+      "model": "cliproxyapi/gemini-3.1-pro-preview"
+    },
+    "unspecified-low": {
+      "model": "cliproxyapi/glm-5"
+    },
+    "unspecified-high": {
+      "model": "cliproxyapi/glm-5"
+    }
+  }
+}

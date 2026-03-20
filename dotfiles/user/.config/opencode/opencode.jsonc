@@ -1,7 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["oh-my-opencode"],
-  "model": "proxy/kimi-k2.5",
+  "plugin": [
+    "oh-my-opencode"
+  ],
+  "model": "openai/gpt-5.3-codex",
   "provider": {
     "proxy": {
       "npm": "@ai-sdk/openai-compatible",
@@ -28,8 +30,12 @@
             "output": 32768,
           },
           "modalities": {
-            "input": ["text"],
-            "output": ["text"],
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "qwen3-vl-plus": {
@@ -50,8 +56,15 @@
             "output": 32768,
           },
           "modalities": {
-            "input": ["text", "image", "audio", "video"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "glm-5": {
@@ -72,8 +85,12 @@
             "output": 128000,
           },
           "modalities": {
-            "input": ["text"],
-            "output": ["text"],
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "gemini-2.5-computer-use-preview-10-2025": {
@@ -93,8 +110,15 @@
             "output": 65535,
           },
           "modalities": {
-            "input": ["text", "image", "audio", "video"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "qwen3-max-preview": {
@@ -129,8 +153,13 @@
             "output": 64000,
           },
           "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "claude-opus-4-6-thinking": {
@@ -156,8 +185,13 @@
             "output": 64000,
           },
           "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "minimax-m2.5": {
@@ -216,8 +250,14 @@
             "output": 65535,
           },
           "modalities": {
-            "input": ["text", "image"],
-            "output": ["text", "image"],
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text",
+              "image"
+            ],
           },
         },
         "gemini-3-flash-preview": {
@@ -239,8 +279,15 @@
             "output": 65535,
           },
           "modalities": {
-            "input": ["text", "image", "audio", "video"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "deepseek-v3.2-chat": {
@@ -331,8 +378,15 @@
             "output": 16384,
           },
           "modalities": {
-            "input": ["text", "image", "audio", "video"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "deepseek-v3.2-reasoner": {
@@ -372,8 +426,15 @@
             "output": 65535,
           },
           "modalities": {
-            "input": ["text", "image", "audio", "video"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "gemini-3-pro-preview": {
@@ -395,8 +456,47 @@
             "output": 65535,
           },
           "modalities": {
-            "input": ["text", "image", "audio", "video", "pdf"],
-            "output": ["text"],
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ],
+          },
+        },
+        "gemini-3.1-pro-preview": {
+          "id": "gemini-3.1-pro-preview",
+          "name": "Gemini 3.1 Pro Preview",
+          "family": "Gemini",
+          "release_date": "2026-02-20",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "status": "beta",
+          "cost": {
+            "input": 0,
+            "output": 0,
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 65535,
+          },
+          "modalities": {
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ],
           },
         },
         "tstars2.0": {
@@ -419,100 +519,85 @@
         },
       },
     },
-    "nvapi": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "nvapi",
-      "options": {
-        "baseURL": "https://integrate.api.nvidia.com/v1",
-      },
-      "models": {
-        "Kimi K2.5": {
-          "name": "moonshotai/kimi-k2.5",
+    "mcp": {
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "headers": {
+          "CONTEXT7_API_KEY": "",
         },
-        "GLM 4.7": {
-          "name": "z-ai/glm4.7",
+        "enabled": true
+      },
+      "deepwiki": {
+        "type": "remote",
+        "url": "https://mcp.deepwiki.com/mcp",
+        "enabled": true
+      },
+      "gh_grep": {
+        "type": "remote",
+        "url": "https://mcp.grep.app",
+        "enabled": false
+      },
+      "tavily": {
+        "type": "remote",
+        "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=",
+        "enabled": false
+      },
+      "exa": {
+        "type": "remote",
+        "url": "https://mcp.exa.ai/mcp?exaApiKey=",
+        "enabled": true
+      },
+      "n8n-mcp": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "n8n-mcp"
+        ],
+        "environment": {
+          "MCP_MODE": "stdio",
+          "LOG_LEVEL": "error",
+          "DISABLE_CONSOLE_OUTPUT": "true",
+          "N8N_API_URL": "https://n8n",
+          "N8N_API_KEY": "",
+          "N8N_MCP_TELEMETRY_DISABLED": "true"
         },
-        "DeepSeek v3.2": {
-          "name": "deepseek-ai/deepseek-v3_2",
-        },
+        "enabled": false
       },
-    },
-  },
-  "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "",
+      "n8n-mcp-off": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "supergateway",
+          "--streamableHttp",
+          "https://n8n",
+          "--header",
+          "authorization:Bearer ",
+        ],
+        "enabled": false
       },
-      "enabled": true,
+      "git": {
+        "type": "local",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "-i",
+          "--mount",
+          "type=bind,src=./,dst=/workspace",
+          "mcp/git"
+        ],
+        "enabled": false
+      }
     },
-    "deepwiki": {
-      "type": "remote",
-      "url": "https://mcp.deepwiki.com/mcp",
-      "enabled": true,
-    },
-    "gh_grep": {
-      "type": "remote",
-      "url": "https://mcp.grep.app",
-      "enabled": false,
-    },
-    "tavily": {
-      "type": "remote",
-      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=",
-      "enabled": false,
-    },
-    "exa": {
-      "type": "remote",
-      "url": "https://mcp.exa.ai/mcp?exaApiKey=",
-      "enabled": true,
-    },
-    "n8n-mcp": {
-      "type": "local",
-      "command": ["npx", "-y", "n8n-mcp"],
-      "environment": {
-        "MCP_MODE": "stdio",
-        "LOG_LEVEL": "error",
-        "DISABLE_CONSOLE_OUTPUT": "true",
-        "N8N_API_URL": "https://n8n",
-        "N8N_API_KEY": "",
-        "N8N_MCP_TELEMETRY_DISABLED": "true",
+    "agent": {
+      "explore": {
+        "disable": false
       },
-      "enabled": false,
-    },
-    "n8n-mcp-off": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "supergateway",
-        "--streamableHttp",
-        "https://n8n",
-        "--header",
-        "authorization:Bearer ",
-      ],
-      "enabled": false,
-    },
-    "git": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "--mount",
-        "type=bind,src=./,dst=/workspace",
-        "mcp/git",
-      ],
-      "enabled": false,
-    },
-  },
-  "agent": {
-    "explore": {
-      "disable": false,
-    },
-    "general": {
-      "disable": true,
-    },
-  },
-}
+      "general": {
+        "disable": true
+      }
+    }
+  }
