@@ -2,9 +2,9 @@
 Name=eth0
 
 [Network]
-DHCP=ipv4
-LinkLocalAddressing=no
+DHCP=yes
+#LinkLocalAddressing=no
 IPv6AcceptRA=no
-DNS=1.0.0.2
-DNS=185.228.168.9
-DNS=176.56.237.171
+#DNS=1.0.0.2
+#DNS=185.228.168.9
+#DNS=176.56.237.171
