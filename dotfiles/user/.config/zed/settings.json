@@ -544,8 +544,8 @@
             },
           },
           {
-            "name": "gemini-3-pro-preview",
-            "display_name": "Gemini 3 Pro Preview",
+            "name": "gemini-3.1-flash-lite-preview",
+            "display_name": "Gemini 3.1 Flash Lite Preview",
             "max_tokens": 1048576,
             "max_completion_tokens": 65535,
             "capabilities": {
